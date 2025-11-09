@@ -3,9 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Live Stream VDO.Ninja</title>
-  
-  <!-- HLS.js DIHAPUS karena kita menggunakan IFRAME untuk VDO.Ninja -->
+  <title>Live StreamHub</title>
   
   <style>
     body { margin: 0; background: black; color: white; font-family: sans-serif; overflow: hidden; }
@@ -46,7 +44,6 @@
   </style>
 </head>
 <body>
-  <!-- 💡 PERUBAHAN: Ganti <video> dengan <iframe> untuk memuat VDO.Ninja -->
   <iframe 
     id="liveIframe" 
     src="https://vdo.ninja/?scene=0&room=testinglivestrram" 
@@ -82,17 +79,12 @@
     const db = getDatabase(app);
 
     // --- VARIABEL & REFERENSI DOM ---
-    // iframe menggantikan video
     const chatBox = document.getElementById("chatBox");
     const chatText = document.getElementById("chatText");
     const sendChatButton = document.getElementById("sendChatButton");
     const viewersCountElement = document.getElementById("viewersCount");
     
     let username = localStorage.getItem("username");
-    
-    // --- 4. FUNGSI UTAMA ---
-
-    // 💡 Kode inisialisasi video HLS sudah dihapus total.
     
     // 4.1. Login penonton
     if (!username) {
@@ -101,188 +93,45 @@
       localStorage.setItem("username", username);
     }
     
-    // 4.2. Membersihkan data penonton lama (Hanya hapus data viewers)
+    // 4.2. Membersihkan data penonton lama
     function cleanViewersOnLoad() {
         const viewersRef = ref(db, "viewers");
         // Hapus seluruh node 'viewers'
-        set(viewersRef, null)
-            .then(() => {
-                console.log("Data penonton lama berhasil dibersihkan.");
-            })
-            .catch((error) => {
-                console.error("Gagal membersihkan data penonton lama:", error);
-            });
+        return set(viewersRef, null); // Mengembalikan Promise dari operasi set
     }
 
-    cleanViewersOnLoad();
-
-
-    // 4.3. Kelola Penonton Aktif
-    const viewersRef = ref(db, "viewers");
+    // --- 4.3. KELOLA PENONTON SETELAH PEMBERSIHAN ---
     
-    const newViewerRef = push(viewersRef, { name: username });
-    
-    const viewerKey = newViewerRef.key;
-    const viewerRefToRemove = ref(db, `viewers/${viewerKey}`);
+    // 💡 PERBAIKAN: Seluruh logika penonton diletakkan di dalam .then()
+    cleanViewersOnLoad()
+      .then(() => {
+        console.log("Data penonton lama berhasil dibersihkan. Memulai sesi baru...");
 
-    // Set onDisconnect untuk menghapus node saat user keluar
-    onDisconnect(viewerRefToRemove).remove();
-    
-    // Hitung jumlah penonton real-time
-    onValue(viewersRef, (snapshot) => {
-      const data = snapshot.val();
-      const count = data ? Object.keys(data).length : 0;
-      viewersCountElement.innerText = count;
-    });
-
-    // 4.4. Tampilkan Chat
-    const chatRef = ref(db, "chat");
-    onChildAdded(chatRef, (data) => {
-      const msg = data.val();
-      const el = document.createElement("div");
-      
-      const nameSpan = document.createElement("span");
-      nameSpan.textContent = msg.name;
-      nameSpan.style.fontWeight = "bold";
-      nameSpan.style.color = (msg.name === username) ? "#FFD700" : "#FF006E";
-
-      el.appendChild(nameSpan);
-      el.innerHTML += ": " + msg.text;
-      
-      chatBox.appendChild(el);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    });
-
-    // 4.5. Kirim Chat
-    function sendChat() {
-      const text = chatText.value.trim();
-      if (!text) return;
-      
-      push(chatRef, { name: username, text }); 
-      chatText.value = "";
-    }
-    
-    // --- 5. EVENT LISTENERS ---
-    
-    // Pasang listener pada tombol
-    sendChatButton.addEventListener('click', sendChat);
-    
-    // Pasang listener pada input field untuk mengirim chat dengan tombol Enter
-    chatText.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        sendChat();
-      }
-    });
-
-  </script>
-</body>
-</html>
-
-      z-index: 10;
-    }
-  </style>
-</head>
-<body>
-  <video id="liveVideo" autoplay muted playsinline></video>
-  <div id="viewersBox">👤 <span id="viewersCount">0</span> penonton</div>
-  <div id="chatBox"></div>
-  <div id="chatInput">
-    <input id="chatText" placeholder="Ketik komentar..." />
-    <button id="sendChatButton">Kirim</button>
-  </div>
-  
-  <script type="module">
-    // 1. Import semua fungsi yang dibutuhkan dari SDK Modular
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue, onChildAdded, onDisconnect, set } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js";
-    
-    // 2. Konfigurasi Firebase (dari input Anda)
-    const firebaseConfig = {
-      apiKey: "AIzaSyAoJBClnMsyRFKeXsqG9oauypjWAo9wQEw",
-      authDomain: "livestreamhub-28db2.firebaseapp.com",
-      databaseURL: "https://livestreamhub-28db2-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "livestreamhub-28db2",
-      storageBucket: "livestreamhub-28db2.firebasestorage.app",
-      messagingSenderId: "317541196121",
-      appId: "1:317541196121:web:3501340de1f078b1fdec48",
-      measurementId: "G-XBLK7QW6GC"
-    };
-
-    // 3. Inisialisasi Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    // --- VARIABEL & REFERENSI DOM ---
-    const video = document.getElementById('liveVideo');
-    const chatBox = document.getElementById("chatBox");
-    const chatText = document.getElementById("chatText");
-    const sendChatButton = document.getElementById("sendChatButton");
-    const viewersCountElement = document.getElementById("viewersCount");
-    
-    let username = localStorage.getItem("username");
-    
-    // --- 4. FUNGSI UTAMA ---
-
-    // 4.1. Inisialisasi video stream (HLS)
-    const hlsUrl = "https://stream.mux.com/yb2L3z3Z4IKQH02HYkf9xPToVYkOC85WA.m3u8"; 
-
-    if (Hls.isSupported()) {
-      const hls = new Hls();
-      hls.loadSource(hlsUrl);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = hlsUrl;
-      video.play();
-    }
-    
-    // 4.2. Login penonton
-    if (!username) {
-      username = prompt("Masukkan nama Anda:");
-      if (!username || username.trim() === "") username = "Tamu Anonim (" + Math.floor(Math.random() * 100) + ")"; 
-      localStorage.setItem("username", username);
-    }
-    
-    // 💡 FUNGSI BARU: Membersihkan data penonton lama
-    // Ini memastikan hitungan dimulai dari 0 saat browser pertama kali dibuka atau jika ada data sampah.
-    function cleanViewersOnLoad() {
         const viewersRef = ref(db, "viewers");
-        // Hapus seluruh node 'viewers'
-        set(viewersRef, null)
-            .then(() => {
-                console.log("Data penonton lama berhasil dibersihkan.");
-            })
-            .catch((error) => {
-                console.error("Gagal membersihkan data penonton lama:", error);
-            });
-    }
+        
+        // Tambahkan penonton saat ini (ANDA)
+        const newViewerRef = push(viewersRef, { name: username });
+        
+        const viewerKey = newViewerRef.key;
+        const viewerRefToRemove = ref(db, `viewers/${viewerKey}`);
 
-    // Panggil saat aplikasi diinisialisasi
-    cleanViewersOnLoad();
+        // Set onDisconnect untuk menghapus node saat user keluar
+        onDisconnect(viewerRefToRemove).remove();
+        
+        // Hitung jumlah penonton real-time
+        onValue(viewersRef, (snapshot) => {
+          const data = snapshot.val();
+          // Menghitung jumlah objek anak dalam data
+          const count = data ? Object.keys(data).length : 0;
+          viewersCountElement.innerText = count;
+        });
+      })
+      .catch((error) => {
+          console.error("Gagal membersihkan data penonton lama atau memulai sesi:", error);
+      });
+      
 
-
-    // 4.3. Kelola Penonton Aktif
-    const viewersRef = ref(db, "viewers");
-    
-    // Buat referensi baru untuk viewer ini
-    const newViewerRef = push(viewersRef, { name: username });
-    
-    // Dapatkan referensi tempat data akan dihapus
-    const viewerKey = newViewerRef.key;
-    const viewerRefToRemove = ref(db, `viewers/${viewerKey}`);
-
-    // Set onDisconnect untuk menghapus node saat user keluar
-    onDisconnect(viewerRefToRemove).remove();
-    
-    // Hitung jumlah penonton real-time
-    onValue(viewersRef, (snapshot) => {
-      const data = snapshot.val();
-      // Menghitung jumlah objek anak dalam data
-      const count = data ? Object.keys(data).length : 0;
-      viewersCountElement.innerText = count;
-    });
-
-    // 4.4. Tampilkan Chat
+    // 4.4. Tampilkan Chat (Chat tidak memerlukan urutan ketat seperti penonton)
     const chatRef = ref(db, "chat");
     onChildAdded(chatRef, (data) => {
       const msg = data.val();
